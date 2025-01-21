@@ -1,0 +1,22 @@
+data:
+  path: "./data"
+
+train:
+  # 하이퍼파라미터 설정
+  num_epochs: 20
+  learning_rate: 0.001
+  input_size: 1
+  hidden_size: 50
+  num_layers: 2
+  output_size: 1
+
+#model:
+# pretrained: true
+
+logging:
+  level: INFO
+  file: "./logs/train.log"
+
+checkpoint:
+  directory: "./checkpoints"
+  save_interval: 5
