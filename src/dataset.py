@@ -13,9 +13,15 @@ def dataset():
     data = yf.download(ticker, period="5y", interval="1d")
     data = data[['Close']]  # 종가만 사용
 
-    # 데이터 정규화 (0과 1 사이로 변환)
+    # Train-test split (먼저 나눔)
+    train_size = int(len(data) * 0.8)
+    train_data = data[:train_size]
+    test_data = data[train_size:]
+
+    # 데이터 정규화 (훈련 데이터에 대해서만 fit)
     scaler = MinMaxScaler(feature_range=(0, 1))
-    scaled_data = scaler.fit_transform(data)
+    scaled_train_data = scaler.fit_transform(train_data)  # 훈련 데이터에 대해 fit_transform
+    scaled_test_data = scaler.transform(test_data)       # 테스트 데이터에 대해 transform
 
     # 시퀀스 데이터 준비 함수
     def create_sequences(dataset, time_step=60):
@@ -26,20 +32,22 @@ def dataset():
         return np.array(X), np.array(y)
 
     time_step = 60
-    X, y = create_sequences(scaled_data, time_step)
+    X_train, y_train = create_sequences(scaled_train_data, time_step)
+    X_test, y_test = create_sequences(scaled_test_data, time_step)
 
-    # PyTorch 텐서로 변환 및 차원 재조정
-    X = torch.from_numpy(X).float().unsqueeze(-1)  # shape: (samples, timesteps, features)
-    y = torch.from_numpy(y).float().unsqueeze(-1)  # shape: (samples, 1)
+    # Tensor 변환 및 차원 추가
+    X_train = torch.tensor(X_train, dtype=torch.float32).unsqueeze(-1)  # Add input_size dimension
+    y_train = torch.tensor(y_train, dtype=torch.float32).unsqueeze(-1)  # Match output size with input
+    X_test = torch.tensor(X_test, dtype=torch.float32).unsqueeze(-1)  # Add input_size dimension
+    y_test = torch.tensor(y_test, dtype=torch.float32).unsqueeze(-1)  # Match output size with input
 
-
-    dataset = TensorDataset(X, y)
-
-    train_size = int(len(dataset) * 0.8)
-    test_size = len(dataset) - train_size
-    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
+    # TensorDataset 및 DataLoader 생성
+    train_dataset = TensorDataset(X_train, y_train)
+    test_dataset = TensorDataset(X_test, y_test)
 
     batch_size = 32
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, drop_last=True)
-    return train_loader, test_loader, scaler
+
+    return train_loader, test_loader, scaler, data
+
