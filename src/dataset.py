@@ -21,6 +21,8 @@ def dataset():
     scaled_test_data = scaler.transform(test_data)       # 테스트 데이터에 대해 transform
 
     # 시퀀스 데이터 준비 함수
+    # time_step은 시퀀스 길이입니다. 예를 들어, time_step=120이면 120일치 데이터를 기반으로 다음날(121일부터)부터의 종가를 예측합니다.
+    # X는 120일치 데이터, y는 다음날 종가입니다.
     def create_sequences(dataset, time_step=120):
         X, y = [], []
         for i in range(len(dataset) - time_step - 1):
