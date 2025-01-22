@@ -18,20 +18,20 @@ def dataset():
     train_data = data[:train_size]
     test_data = data[train_size:]
 
-    # 데이터 정규화 (훈련 데이터에 대해서만 fit)
+    # 데이터 정규화 (훈련 데이터에 대해서만 fit, 테스트 데이터는 훈련 데이터 기반으로 fit한 정규화 기반으로 transform)
     scaler = MinMaxScaler(feature_range=(0, 1))
     scaled_train_data = scaler.fit_transform(train_data)  # 훈련 데이터에 대해 fit_transform
     scaled_test_data = scaler.transform(test_data)       # 테스트 데이터에 대해 transform
 
     # 시퀀스 데이터 준비 함수
-    def create_sequences(dataset, time_step=60):
+    def create_sequences(dataset, time_step=120):
         X, y = [], []
         for i in range(len(dataset) - time_step - 1):
             X.append(dataset[i:(i + time_step), 0])
             y.append(dataset[i + time_step, 0])
         return np.array(X), np.array(y)
 
-    time_step = 60
+    time_step = 120
     X_train, y_train = create_sequences(scaled_train_data, time_step)
     X_test, y_test = create_sequences(scaled_test_data, time_step)
 
@@ -40,6 +40,9 @@ def dataset():
     y_train = torch.tensor(y_train, dtype=torch.float32).unsqueeze(-1)  # Match output size with input
     X_test = torch.tensor(X_test, dtype=torch.float32).unsqueeze(-1)  # Add input_size dimension
     y_test = torch.tensor(y_test, dtype=torch.float32).unsqueeze(-1)  # Match output size with input
+
+    print(f"y_train min: {y_train.min()}, max: {y_train.max()}")
+    print(f"y_test min: {y_test.min()}, max: {y_test.max()}")
 
     # TensorDataset 및 DataLoader 생성
     train_dataset = TensorDataset(X_train, y_train)

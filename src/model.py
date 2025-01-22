@@ -2,15 +2,27 @@ import torch
 import torch.nn as nn
 
 class LSTMModel(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, output_size):
+    def __init__(self, input_size, hidden_size, num_layers, output_size, activation='relu'):
         super(LSTMModel, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         
         # LSTM 레이어 정의
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+        
         # 출력층 정의
-        self.fc = nn.Linear(hidden_size, output_size)
+        if activation == 'relu':
+            self.fc = nn.Sequential(
+                nn.Linear(hidden_size, output_size),
+                nn.ReLU()  # 음수 값 방지
+            )
+        elif activation == 'sigmoid':
+            self.fc = nn.Sequential(
+                nn.Linear(hidden_size, output_size),
+                nn.Sigmoid()  # 0 ~ 1 범위로 제한
+            )
+        else:  # 기본 활성화 함수 없음
+            self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
         # 초기 은닉 상태 및 셀 상태 정의 (batch_size, hidden_size)
@@ -23,5 +35,3 @@ class LSTMModel(nn.Module):
         # 마지막 타임스텝의 출력을 사용하여 예측
         out = self.fc(out[:, -1, :])
         return out
-
-

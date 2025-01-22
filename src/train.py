@@ -11,8 +11,9 @@ def train_lstm_model(model, train_loader, config):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    # MSE 대신 Huber Loss 사용
+    criterion = nn.SmoothL1Loss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["learning_rate"])
 
     num_epochs = config["train"]["num_epochs"]
 
