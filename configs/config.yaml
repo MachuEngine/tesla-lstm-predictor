@@ -3,7 +3,7 @@ data:
 
 train:
   # 하이퍼파라미터 설정
-  num_epochs: 1000
+  num_epochs: 250
   learning_rate: 0.001
   input_size: 1
   hidden_size: 256
