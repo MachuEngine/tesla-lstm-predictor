@@ -75,6 +75,29 @@ checkpoint:
   save_interval: 5
 ```
 
+### 모델
+순차데이터 처리를 위해 LSTM 모델을 이용합니다. Config에서 정의한 것과 같이 hidden_size는 64이며, num_layers는 2로 구성됩니다.
+```py
+import torch
+import torch.nn as nn
+
+class LSTMModel(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers, output_size, dropout=0.2):
+        super(LSTMModel, self).__init__()
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout)
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x):
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+        out, _ = self.lstm(x, (h0, c0))
+        out = out[:, -1, :]  # 마지막 타임스텝의 출력만 사용
+        out = self.fc(out)  # 출력층에 활성화 함수 없음
+        return out
+```
+
 ### 사용 방법
 
 1. 메인 스크립트 실행
@@ -91,7 +114,59 @@ src/eval.py의 평가,
 src/visualization.py의 결과 시각화를 순차적으로 호출합니다.
 
 2. 결과 확인
-학습이 완료되면, 터미널에 학습 손실과 예측 결과가 출력되며, 시각화 창이 열려 예측 값과 실제 값의 비교 그래프를 확인할 수 있습니다.
+학습이 완료되면, 터미널에 학습 손실과 예측 결과가 출력되며, 시각화된된 예측 값과 실제 값의 비교 그래프를 확인할 수 있습니다.
+
+```
+(stt_env) C:\Users\Admin\Documents\Projects\tesla-lstm-predictor>python main.py
+[*********************100%***********************]  1 of 1 completed
+y_train min: 0.0, max: 1.0
+y_test min: 0.33085575699806213, max: 1.1745538711547852
+
+Epoch 10/200, Loss: 0.000733
+Epoch 20/200, Loss: 0.000534
+Epoch 30/200, Loss: 0.000500
+Epoch 40/200, Loss: 0.000446
+Epoch 50/200, Loss: 0.000429
+Epoch 60/200, Loss: 0.000325
+...
+Epoch 150/200, Loss: 0.000296
+Epoch 160/200, Loss: 0.000297
+Epoch 170/200, Loss: 0.000275
+Epoch 180/200, Loss: 0.000278
+Epoch 190/200, Loss: 0.000274
+Epoch 200/200, Loss: 0.000277
+
+Predictions before inverse transform: [[0.41361004]
+ [0.42765713]
+ [0.4317749 ]
+ [0.4369152 ]
+ [0.43686327]
+ [0.43586728]
+ [0.4569445 ]
+ [0.4678345 ]
+ [0.46752587]
+ [0.46044657]]
+
+Predictions range after inverse transform: 145.84637451171875 to 456.5382385253906
+Actuals range after inverse transform: 142.0500030517578 to 479.8599853515625
+Predictions after inverse transform: [[175.18414]
+ [180.80849]
+ [182.45721]
+ [184.51535]
+ [184.49455]
+ [184.09576]
+ [192.53491]
+ [196.89519]
+ [196.77162]
+ [193.93712]]
+
+Original data range: Ticker
+TSLA    9.578
+dtype: float64 to Ticker
+TSLA    479.859985
+dtype: float64
+```
+![alt text](./outputs/result.png)
 
 ### 라이선스
 이 프로젝트는 MIT 라이선스 하에 배포됩니다.
